@@ -95,6 +95,7 @@ const LeadsManagement = () => {
                   <th className="text-left p-3">Company</th>
                   <th className="text-left p-3">Contact</th>
                   <th className="text-left p-3">Email</th>
+                  <th className="text-left p-3">Application</th>
                   <th className="text-left p-3">Status</th>
                   <th className="text-left p-3">Source</th>
                   <th className="text-left p-3">Value</th>
@@ -107,6 +108,7 @@ const LeadsManagement = () => {
                     <td className="p-3 font-medium">{lead.company}</td>
                     <td className="p-3">{lead.contact_name}</td>
                     <td className="p-3">{lead.email}</td>
+                    <td className="p-3 text-xs">{lead.application}</td>
                     <td className="p-3">
                       <Badge className={getStatusColor(lead.status)}>
                         {lead.status.replace('_', ' ')}

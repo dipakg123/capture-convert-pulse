@@ -9,6 +9,7 @@ interface Lead {
   phone: string;
   status: string;
   source: string;
+  application: string;
   estimated_value: number;
   notes: string;
   assigned_to?: string;
@@ -26,6 +27,7 @@ const mockLeads: Lead[] = [
     phone: '+1-234-567-8901',
     status: 'new',
     source: 'website',
+    application: 'Material & Warehouse Material Handling',
     estimated_value: 50000,
     notes: 'Interested in our enterprise solution',
     created_at: '2024-01-15T10:30:00Z',
@@ -39,6 +41,7 @@ const mockLeads: Lead[] = [
     phone: '+1-234-567-8902',
     status: 'contacted',
     source: 'referral',
+    application: 'Robotic AGV / AMR',
     estimated_value: 75000,
     notes: 'Follow up next week for proposal discussion',
     created_at: '2024-01-14T14:20:00Z',
@@ -52,6 +55,7 @@ const mockLeads: Lead[] = [
     phone: '+1-234-567-8903',
     status: 'proposal_sent',
     source: 'email',
+    application: 'Vision System',
     estimated_value: 120000,
     notes: 'Proposal sent on Monday, awaiting response',
     created_at: '2024-01-10T16:45:00Z',

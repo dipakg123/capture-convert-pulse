@@ -1,36 +1,16 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, FileText, Download } from 'lucide-react';
+import ProposalDialog from './ProposalDialog';
+import { useProposals } from '@/hooks/useProposals';
 
 const ProposalManagement = () => {
-  const proposals = [
-    {
-      id: '1',
-      title: 'Enterprise Software Solution',
-      client: 'Tech Solutions Inc',
-      status: 'draft',
-      value: 50000,
-      created_at: '2024-01-15',
-    },
-    {
-      id: '2',
-      title: 'Manufacturing System Upgrade',
-      client: 'Global Manufacturing',
-      status: 'sent',
-      value: 75000,
-      created_at: '2024-01-14',
-    },
-    {
-      id: '3',
-      title: 'Innovation Platform Development',
-      client: 'Innovation Labs',
-      status: 'approved',
-      value: 120000,
-      created_at: '2024-01-10',
-    },
-  ];
+  const [showDialog, setShowDialog] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState(null);
+  const { proposals, addProposal, updateProposal } = useProposals();
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -49,7 +29,7 @@ const ProposalManagement = () => {
           <h1 className="text-2xl font-bold text-gray-900">Proposal Management</h1>
           <p className="text-gray-600">Create and manage client proposals</p>
         </div>
-        <Button>
+        <Button onClick={() => { setSelectedProposal(null); setShowDialog(true); }}>
           <Plus className="w-4 h-4 mr-2" />
           Create Proposal
         </Button>
@@ -85,7 +65,11 @@ const ProposalManagement = () => {
                     <td className="p-3">${proposal.value.toLocaleString()}</td>
                     <td className="p-3">{proposal.created_at}</td>
                     <td className="p-3 space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => { setSelectedProposal(proposal); setShowDialog(true); }}
+                      >
                         <FileText className="w-4 h-4 mr-1" />
                         Edit
                       </Button>
@@ -101,6 +85,20 @@ const ProposalManagement = () => {
           </div>
         </CardContent>
       </Card>
+
+      <ProposalDialog
+        open={showDialog}
+        onOpenChange={setShowDialog}
+        proposal={selectedProposal}
+        onSave={(proposalData) => {
+          if (selectedProposal) {
+            updateProposal(selectedProposal.id, proposalData);
+          } else {
+            addProposal(proposalData);
+          }
+          setShowDialog(false);
+        }}
+      />
     </div>
   );
 };

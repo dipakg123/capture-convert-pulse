@@ -14,6 +14,7 @@ interface Lead {
   phone: string;
   status: string;
   source: string;
+  application: string;
   estimated_value: number;
   notes: string;
 }
@@ -33,9 +34,21 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave }: LeadDialogProps) => {
     phone: '',
     status: 'new',
     source: 'website',
+    application: 'Material & Warehouse Material Handling',
     estimated_value: 0,
     notes: '',
   });
+
+  const applicationOptions = [
+    'Material & Warehouse Material Handling',
+    'Fluid Dispensing System',
+    'Foundry Automation System',
+    'Vision System',
+    'Robotic AGV / AMR',
+    'Robotic 3D Manufacturing',
+    'Robots In Assembly lines',
+    'Welding Automation'
+  ];
 
   useEffect(() => {
     if (lead) {
@@ -46,6 +59,7 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave }: LeadDialogProps) => {
         phone: lead.phone,
         status: lead.status,
         source: lead.source,
+        application: lead.application || 'Material & Warehouse Material Handling',
         estimated_value: lead.estimated_value,
         notes: lead.notes,
       });
@@ -57,6 +71,7 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave }: LeadDialogProps) => {
         phone: '',
         status: 'new',
         source: 'website',
+        application: 'Material & Warehouse Material Handling',
         estimated_value: 0,
         notes: '',
       });
@@ -118,7 +133,7 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave }: LeadDialogProps) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="status">Status</Label>
               <select
@@ -150,6 +165,24 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave }: LeadDialogProps) => {
                 <option value="referral">Referral</option>
                 <option value="social_media">Social Media</option>
                 <option value="trade_show">Trade Show</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="application">Application</Label>
+              <select
+                id="application"
+                value={formData.application}
+                onChange={(e) => setFormData({ ...formData, application: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              >
+                {applicationOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
               </select>
             </div>
             <div>

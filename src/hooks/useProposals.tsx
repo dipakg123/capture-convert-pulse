@@ -9,6 +9,7 @@ interface Proposal {
   value: number;
   description: string;
   created_at: string;
+  attachments?: File[];
 }
 
 const mockProposals: Proposal[] = [

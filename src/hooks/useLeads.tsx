@@ -15,6 +15,7 @@ interface Lead {
   assigned_to?: string;
   created_at: string;
   updated_at: string;
+  attachments?: File[];
 }
 
 // Mock data for demonstration

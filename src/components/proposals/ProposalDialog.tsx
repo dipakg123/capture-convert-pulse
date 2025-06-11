@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { FileUpload } from '@/components/ui/file-upload';
 
 interface Proposal {
   id: string;
@@ -14,6 +15,7 @@ interface Proposal {
   value: number;
   description: string;
   created_at: string;
+  attachments?: File[];
 }
 
 interface ProposalDialogProps {
@@ -32,6 +34,8 @@ const ProposalDialog = ({ open, onOpenChange, proposal, onSave }: ProposalDialog
     description: '',
   });
 
+  const [attachments, setAttachments] = useState<File[]>([]);
+
   useEffect(() => {
     if (proposal) {
       setFormData({
@@ -41,6 +45,7 @@ const ProposalDialog = ({ open, onOpenChange, proposal, onSave }: ProposalDialog
         value: proposal.value,
         description: proposal.description,
       });
+      setAttachments(proposal.attachments || []);
     } else {
       setFormData({
         title: '',
@@ -49,17 +54,18 @@ const ProposalDialog = ({ open, onOpenChange, proposal, onSave }: ProposalDialog
         value: 0,
         description: '',
       });
+      setAttachments([]);
     }
   }, [proposal, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave({ ...formData, attachments });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{proposal ? 'Edit Proposal' : 'Create New Proposal'}</DialogTitle>
         </DialogHeader>
@@ -121,6 +127,14 @@ const ProposalDialog = ({ open, onOpenChange, proposal, onSave }: ProposalDialog
               rows={4}
             />
           </div>
+
+          <FileUpload
+            files={attachments}
+            onFilesChange={setAttachments}
+            label="Proposal Documents"
+            maxFiles={10}
+            acceptedTypes=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+          />
 
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

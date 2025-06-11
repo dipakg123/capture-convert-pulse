@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { FileUpload } from '@/components/ui/file-upload';
 
 interface Lead {
   id: string;
@@ -17,6 +18,7 @@ interface Lead {
   application: string;
   estimated_value: number;
   notes: string;
+  attachments?: File[];
 }
 
 interface LeadDialogProps {
@@ -38,6 +40,8 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave }: LeadDialogProps) => {
     estimated_value: 0,
     notes: '',
   });
+
+  const [attachments, setAttachments] = useState<File[]>([]);
 
   const applicationOptions = [
     'Material & Warehouse Material Handling',
@@ -63,6 +67,7 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave }: LeadDialogProps) => {
         estimated_value: lead.estimated_value,
         notes: lead.notes,
       });
+      setAttachments(lead.attachments || []);
     } else {
       setFormData({
         company: '',
@@ -75,17 +80,18 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave }: LeadDialogProps) => {
         estimated_value: 0,
         notes: '',
       });
+      setAttachments([]);
     }
   }, [lead, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave({ ...formData, attachments });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{lead ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
         </DialogHeader>
@@ -205,6 +211,13 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave }: LeadDialogProps) => {
               rows={4}
             />
           </div>
+
+          <FileUpload
+            files={attachments}
+            onFilesChange={setAttachments}
+            label="Lead Attachments"
+            maxFiles={5}
+          />
 
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

@@ -1,6 +1,14 @@
 
 import { useState, useEffect } from 'react';
 
+interface Memo {
+  id: string;
+  category: 'spare' | 'project' | 'service_provided' | 'key_account';
+  content: string;
+  created_at: string;
+  created_by: string;
+}
+
 interface Lead {
   id: string;
   company: string;
@@ -16,6 +24,8 @@ interface Lead {
   created_at: string;
   updated_at: string;
   attachments?: File[];
+  memos?: Memo[];
+  negotiation?: boolean;
 }
 
 // Mock data for demonstration
@@ -33,6 +43,8 @@ const mockLeads: Lead[] = [
     notes: 'Interested in our enterprise solution',
     created_at: '2024-01-15T10:30:00Z',
     updated_at: '2024-01-15T10:30:00Z',
+    memos: [],
+    negotiation: false,
   },
   {
     id: '2',
@@ -47,6 +59,8 @@ const mockLeads: Lead[] = [
     notes: 'Follow up next week for proposal discussion',
     created_at: '2024-01-14T14:20:00Z',
     updated_at: '2024-01-16T09:15:00Z',
+    memos: [],
+    negotiation: true,
   },
   {
     id: '3',
@@ -61,6 +75,8 @@ const mockLeads: Lead[] = [
     notes: 'Proposal sent on Monday, awaiting response',
     created_at: '2024-01-10T16:45:00Z',
     updated_at: '2024-01-17T11:30:00Z',
+    memos: [],
+    negotiation: false,
   },
 ];
 
@@ -68,7 +84,6 @@ export const useLeads = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
 
   useEffect(() => {
-    // Simulate loading from API
     setLeads(mockLeads);
   }, []);
 
@@ -98,11 +113,31 @@ export const useLeads = () => {
     return leads.filter(lead => lead.status === status);
   };
 
+  const getNegotiationLeads = () => {
+    return leads.filter(lead => lead.negotiation === true);
+  };
+
+  const addMemo = (leadId: string, memo: Omit<Memo, 'id' | 'created_at'>) => {
+    const newMemo: Memo = {
+      ...memo,
+      id: Math.random().toString(36).substr(2, 9),
+      created_at: new Date().toISOString(),
+    };
+    
+    setLeads(prev => prev.map(lead => 
+      lead.id === leadId 
+        ? { ...lead, memos: [...(lead.memos || []), newMemo], updated_at: new Date().toISOString() }
+        : lead
+    ));
+  };
+
   return {
     leads,
     addLead,
     updateLead,
     deleteLead,
     getLeadsByStatus,
+    getNegotiationLeads,
+    addMemo,
   };
 };

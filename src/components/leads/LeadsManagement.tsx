@@ -11,16 +11,18 @@ import { useLeads } from '@/hooks/useLeads';
 const LeadsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showNegotiationOnly, setShowNegotiationOnly] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   
-  const { leads, addLead, updateLead, deleteLead } = useLeads();
+  const { leads, addLead, updateLead, deleteLead, getNegotiationLeads, addMemo } = useLeads();
 
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = lead.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.contact_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesNegotiation = !showNegotiationOnly || lead.negotiation === true;
+    return matchesSearch && matchesStatus && matchesNegotiation;
   });
 
   const getStatusColor = (status: string) => {
@@ -36,6 +38,8 @@ const LeadsManagement = () => {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
+  const negotiationLeads = getNegotiationLeads();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -48,6 +52,35 @@ const LeadsManagement = () => {
           Add Lead
         </Button>
       </div>
+
+      {/* Negotiation Summary */}
+      {negotiationLeads.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-orange-600">Leads in Negotiation ({negotiationLeads.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {negotiationLeads.slice(0, 3).map((lead) => (
+                <div key={lead.id} className="p-3 border border-orange-200 rounded-md bg-orange-50">
+                  <div className="font-medium">{lead.company}</div>
+                  <div className="text-sm text-gray-600">{lead.contact_name}</div>
+                  <div className="text-sm font-medium text-orange-600">
+                    ${lead.estimated_value?.toLocaleString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button 
+              variant="outline" 
+              className="mt-3"
+              onClick={() => setShowNegotiationOnly(true)}
+            >
+              View All Negotiation Leads
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card>
@@ -78,6 +111,13 @@ const LeadsManagement = () => {
               <option value="lost">Lost</option>
               <option value="hold">Hold</option>
             </select>
+            <Button
+              variant={showNegotiationOnly ? "default" : "outline"}
+              onClick={() => setShowNegotiationOnly(!showNegotiationOnly)}
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              {showNegotiationOnly ? 'Show All' : 'Negotiation Only'}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -85,7 +125,10 @@ const LeadsManagement = () => {
       {/* Leads Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Leads ({filteredLeads.length})</CardTitle>
+          <CardTitle>
+            Leads ({filteredLeads.length})
+            {showNegotiationOnly && ' - Negotiation Filter Active'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -99,13 +142,21 @@ const LeadsManagement = () => {
                   <th className="text-left p-3">Status</th>
                   <th className="text-left p-3">Source</th>
                   <th className="text-left p-3">Value</th>
+                  <th className="text-left p-3">Memos</th>
                   <th className="text-left p-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredLeads.map((lead) => (
                   <tr key={lead.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 font-medium">{lead.company}</td>
+                    <td className="p-3">
+                      <div className="font-medium">{lead.company}</div>
+                      {lead.negotiation && (
+                        <Badge className="bg-orange-100 text-orange-800 text-xs mt-1">
+                          Negotiation
+                        </Badge>
+                      )}
+                    </td>
                     <td className="p-3">{lead.contact_name}</td>
                     <td className="p-3">{lead.email}</td>
                     <td className="p-3 text-xs">{lead.application}</td>
@@ -116,6 +167,13 @@ const LeadsManagement = () => {
                     </td>
                     <td className="p-3">{lead.source}</td>
                     <td className="p-3">${lead.estimated_value?.toLocaleString()}</td>
+                    <td className="p-3">
+                      {lead.memos && lead.memos.length > 0 && (
+                        <Badge variant="outline">
+                          {lead.memos.length} memo{lead.memos.length !== 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                    </td>
                     <td className="p-3">
                       <Button
                         variant="outline"
@@ -145,6 +203,7 @@ const LeadsManagement = () => {
           }
           setShowDialog(false);
         }}
+        onAddMemo={addMemo}
       />
     </div>
   );

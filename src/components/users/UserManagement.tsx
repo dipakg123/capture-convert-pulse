@@ -1,36 +1,16 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import UserDialog from './UserDialog';
+import { useUsers } from '@/hooks/useUsers';
 
 const UserManagement = () => {
-  const users = [
-    {
-      id: '1',
-      name: 'John Admin',
-      email: 'admin@company.com',
-      role: 'admin',
-      status: 'active',
-      last_login: '2024-01-18',
-    },
-    {
-      id: '2',
-      name: 'Jane Engineer',
-      email: 'engineer@company.com',
-      role: 'sales_engineer',
-      status: 'active',
-      last_login: '2024-01-18',
-    },
-    {
-      id: '3',
-      name: 'Mike Manager',
-      email: 'manager@company.com',
-      role: 'manager',
-      status: 'active',
-      last_login: '2024-01-17',
-    },
-  ];
+  const [showDialog, setShowDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const { users, addUser, updateUser, deleteUser } = useUsers();
 
   const getRoleColor = (role: string) => {
     const colors = {
@@ -41,6 +21,10 @@ const UserManagement = () => {
     return colors[role as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
+  const getStatusColor = (status: string) => {
+    return status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -48,7 +32,7 @@ const UserManagement = () => {
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600">Manage system users and permissions</p>
         </div>
-        <Button>
+        <Button onClick={() => { setSelectedUser(null); setShowDialog(true); }}>
           <Plus className="w-4 h-4 mr-2" />
           Add User
         </Button>
@@ -82,16 +66,30 @@ const UserManagement = () => {
                       </Badge>
                     </td>
                     <td className="p-3">
-                      <Badge className="bg-green-100 text-green-800">
+                      <Badge className={getStatusColor(user.status)}>
                         {user.status}
                       </Badge>
                     </td>
                     <td className="p-3">{user.last_login}</td>
                     <td className="p-3">
-                      <Button variant="outline" size="sm">
-                        <Edit className="w-4 h-4 mr-1" />
-                        Edit
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => { setSelectedUser(user); setShowDialog(true); }}
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => deleteUser(user.id)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -100,6 +98,20 @@ const UserManagement = () => {
           </div>
         </CardContent>
       </Card>
+
+      <UserDialog
+        open={showDialog}
+        onOpenChange={setShowDialog}
+        user={selectedUser}
+        onSave={(userData) => {
+          if (selectedUser) {
+            updateUser(selectedUser.id, userData);
+          } else {
+            addUser(userData);
+          }
+          setShowDialog(false);
+        }}
+      />
     </div>
   );
 };

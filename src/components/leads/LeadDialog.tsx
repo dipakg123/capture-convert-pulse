@@ -6,6 +6,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from '@/components/ui/file-upload';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useProducts } from '@/hooks/useProducts';
+import { useSpareParts } from '@/hooks/useSpareParts';
+import { useUsers } from '@/hooks/useUsers';
+import { useAuth } from '@/hooks/useAuth';
+
+interface FollowUpHistory {
+  id: string;
+  date: string;
+  action: string;
+  notes: string;
+  created_by: string;
+}
 
 interface Memo {
   id: string;
@@ -26,20 +39,32 @@ interface Lead {
   application: string;
   estimated_value: number;
   notes: string;
+  assigned_to?: string;
+  created_at: string;
+  updated_at: string;
   attachments?: File[];
   memos?: Memo[];
   negotiation?: boolean;
+  productId?: string;
+  sparePartIds?: string[];
+  followUpHistory?: FollowUpHistory[];
 }
 
 interface LeadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  lead?: Lead | null;
-  onSave: (leadData: Omit<Lead, 'id'>) => void;
-  onAddMemo?: (leadId: string, memo: Omit<Memo, 'id' | 'created_at'>) => void;
+  lead?: any | null;
+  onSave: (leadData: any) => void;
+  onAddMemo?: (leadId: string, memo: any) => void;
+  onAddFollowUp?: (leadId: string, followUp: any) => void;
 }
 
-const LeadDialog = ({ open, onOpenChange, lead, onSave, onAddMemo }: LeadDialogProps) => {
+const LeadDialog = ({ open, onOpenChange, lead, onSave, onAddMemo, onAddFollowUp }: LeadDialogProps) => {
+  const { user } = useAuth();
+  const { products } = useProducts();
+  const { spareParts } = useSpareParts();
+  const { users } = useUsers();
+
   const [formData, setFormData] = useState({
     company: '',
     contact_name: '',
@@ -51,13 +76,23 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave, onAddMemo }: LeadDialogP
     estimated_value: 0,
     notes: '',
     negotiation: false,
+    assigned_to: '',
+    productId: '',
+    sparePartIds: [] as string[],
   });
 
   const [attachments, setAttachments] = useState<File[]>([]);
   const [newMemo, setNewMemo] = useState({
     category: 'spare' as 'spare' | 'project' | 'service_provided' | 'key_account',
     content: '',
-    created_by: 'Current User',
+    created_by: user?.name || 'Current User',
+  });
+
+  const [newFollowUp, setNewFollowUp] = useState({
+    action: '',
+    notes: '',
+    created_by: user?.name || 'Current User',
+    date: new Date().toISOString(),
   });
 
   const applicationOptions = [
@@ -70,6 +105,8 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave, onAddMemo }: LeadDialogP
     'Robots In Assembly lines',
     'Welding Automation'
   ];
+
+  const salesEngineers = users.filter(u => u.role === 'sales_engineer' || u.role === 'manager');
 
   useEffect(() => {
     if (lead) {
@@ -84,6 +121,9 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave, onAddMemo }: LeadDialogP
         estimated_value: lead.estimated_value,
         notes: lead.notes,
         negotiation: lead.negotiation || false,
+        assigned_to: lead.assigned_to || '',
+        productId: lead.productId || '',
+        sparePartIds: lead.sparePartIds || [],
       });
       setAttachments(lead.attachments || []);
     } else {
@@ -98,6 +138,9 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave, onAddMemo }: LeadDialogP
         estimated_value: 0,
         notes: '',
         negotiation: false,
+        assigned_to: '',
+        productId: '',
+        sparePartIds: [],
       });
       setAttachments([]);
     }
@@ -105,7 +148,7 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave, onAddMemo }: LeadDialogP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ ...formData, attachments, memos: lead?.memos || [] });
+    onSave({ ...formData, attachments, memos: lead?.memos || [], followUpHistory: lead?.followUpHistory || [] });
   };
 
   const handleAddMemo = () => {
@@ -114,8 +157,34 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave, onAddMemo }: LeadDialogP
       setNewMemo({
         category: 'spare',
         content: '',
-        created_by: 'Current User',
+        created_by: user?.name || 'Current User',
       });
+    }
+  };
+
+  const handleAddFollowUp = () => {
+    if (lead && onAddFollowUp && newFollowUp.action.trim()) {
+      onAddFollowUp(lead.id, newFollowUp);
+      setNewFollowUp({
+        action: '',
+        notes: '',
+        created_by: user?.name || 'Current User',
+        date: new Date().toISOString(),
+      });
+    }
+  };
+
+  const handleSparePartChange = (sparePartId: string, checked: boolean) => {
+    if (checked) {
+      setFormData(prev => ({
+        ...prev,
+        sparePartIds: [...prev.sparePartIds, sparePartId]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        sparePartIds: prev.sparePartIds.filter(id => id !== sparePartId)
+      }));
     }
   };
 
@@ -129,9 +198,11 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave, onAddMemo }: LeadDialogP
     return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
+  const selectedProduct = products.find(p => p.id === formData.productId);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{lead ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
         </DialogHeader>
@@ -242,6 +313,73 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave, onAddMemo }: LeadDialogP
             </div>
           </div>
 
+          {/* Product Selection */}
+          <div>
+            <Label htmlFor="productId">Select Product</Label>
+            <select
+              id="productId"
+              value={formData.productId}
+              onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="">Select a product...</option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.robot} - {product.brand}
+                </option>
+              ))}
+            </select>
+            {selectedProduct && (
+              <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><strong>Robot:</strong> {selectedProduct.robot}</div>
+                  <div><strong>Controller:</strong> {selectedProduct.controller}</div>
+                  <div><strong>Reach:</strong> {selectedProduct.reach}mm</div>
+                  <div><strong>Payload:</strong> {selectedProduct.payload}kg</div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Spare Parts Selection */}
+          <div>
+            <Label>Select Spare Parts</Label>
+            <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-3">
+              {spareParts.map((sparePart) => (
+                <div key={sparePart.id} className="flex items-center space-x-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.sparePartIds.includes(sparePart.id)}
+                    onChange={(e) => handleSparePartChange(sparePart.id, e.target.checked)}
+                  />
+                  <span className="text-sm">
+                    {sparePart.name} - {sparePart.partNumber} (${sparePart.price})
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Assignment (Admin only) */}
+          {user?.role === 'admin' && (
+            <div>
+              <Label htmlFor="assigned_to">Assign To</Label>
+              <select
+                id="assigned_to"
+                value={formData.assigned_to}
+                onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              >
+                <option value="">Unassigned</option>
+                {salesEngineers.map((engineer) => (
+                  <option key={engineer.id} value={engineer.id}>
+                    {engineer.name} ({engineer.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <Label htmlFor="notes">Notes</Label>
             <Textarea
@@ -269,19 +407,63 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave, onAddMemo }: LeadDialogP
             maxFiles={5}
           />
 
-          {/* Memos Section */}
+          {/* Customer History & Memos Section */}
           {lead && (
-            <div className="space-y-4">
-              <div className="border-t pt-4">
-                <h3 className="text-lg font-semibold mb-3">Memos</h3>
-                
-                {/* Add New Memo */}
-                <div className="space-y-3 mb-4">
-                  <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Follow-up History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Follow-up History</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Add Follow-up */}
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Follow-up action"
+                      value={newFollowUp.action}
+                      onChange={(e) => setNewFollowUp({ ...newFollowUp, action: e.target.value })}
+                    />
+                    <Textarea
+                      placeholder="Notes"
+                      value={newFollowUp.notes}
+                      onChange={(e) => setNewFollowUp({ ...newFollowUp, notes: e.target.value })}
+                      rows={2}
+                    />
+                    <Button type="button" onClick={handleAddFollowUp} size="sm">
+                      Add Follow-up
+                    </Button>
+                  </div>
+
+                  {/* Display History */}
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {(lead.followUpHistory || []).map((followUp: any) => (
+                      <div key={followUp.id} className="p-3 border rounded-md bg-gray-50">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-sm">{followUp.action}</span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(followUp.date).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">{followUp.notes}</p>
+                        <p className="text-xs text-gray-500">by {followUp.created_by}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Memos */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Memos</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Add Memo */}
+                  <div className="space-y-2">
                     <select
                       value={newMemo.category}
                       onChange={(e) => setNewMemo({ ...newMemo, category: e.target.value as any })}
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                     >
                       <option value="spare">Spare</option>
                       <option value="project">Project</option>
@@ -293,31 +475,30 @@ const LeadDialog = ({ open, onOpenChange, lead, onSave, onAddMemo }: LeadDialogP
                       value={newMemo.content}
                       onChange={(e) => setNewMemo({ ...newMemo, content: e.target.value })}
                       rows={2}
-                      className="col-span-2"
                     />
+                    <Button type="button" onClick={handleAddMemo} size="sm">
+                      Add Memo
+                    </Button>
                   </div>
-                  <Button type="button" onClick={handleAddMemo} size="sm">
-                    Add Memo
-                  </Button>
-                </div>
 
-                {/* Display Existing Memos */}
-                <div className="space-y-2">
-                  {(lead.memos || []).map((memo) => (
-                    <div key={memo.id} className="p-3 border rounded-md bg-gray-50">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge className={getMemoColor(memo.category)}>
-                          {memo.category.replace('_', ' ')}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                          {new Date(memo.created_at).toLocaleDateString()}
-                        </span>
+                  {/* Display Memos */}
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {(lead.memos || []).map((memo: any) => (
+                      <div key={memo.id} className="p-3 border rounded-md bg-gray-50">
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge className={getMemoColor(memo.category)}>
+                            {memo.category.replace('_', ' ')}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {new Date(memo.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-sm">{memo.content}</p>
                       </div>
-                      <p className="text-sm">{memo.content}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
 

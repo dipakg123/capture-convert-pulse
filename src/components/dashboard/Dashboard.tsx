@@ -6,6 +6,9 @@ import DashboardHome from './DashboardHome';
 import LeadsManagement from '../leads/LeadsManagement';
 import ProposalManagement from '../proposals/ProposalManagement';
 import UserManagement from '../users/UserManagement';
+import ProductMaster from '../products/ProductMaster';
+import SparePartsMaster from '../spareparts/SparePartsMaster';
+import AdminReports from '../reports/AdminReports';
 import { useAuth } from '@/hooks/useAuth';
 
 const Dashboard = () => {
@@ -20,6 +23,12 @@ const Dashboard = () => {
         return <LeadsManagement />;
       case 'proposals':
         return <ProposalManagement />;
+      case 'products':
+        return user?.role === 'admin' ? <ProductMaster /> : <div>Access denied</div>;
+      case 'spareparts':
+        return user?.role === 'admin' ? <SparePartsMaster /> : <div>Access denied</div>;
+      case 'reports':
+        return user?.role === 'admin' ? <AdminReports /> : <div>Access denied</div>;
       case 'users':
         return user?.role === 'admin' ? <UserManagement /> : <div>Access denied</div>;
       default:

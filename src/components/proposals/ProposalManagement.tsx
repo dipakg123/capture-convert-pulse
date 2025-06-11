@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { useProposals } from '@/hooks/useProposals';
 const ProposalManagement = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
-  const { proposals, addProposal, updateProposal } = useProposals();
+  const { proposals, addProposal, updateProposal, addFollowUp } = useProposals();
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -49,6 +48,7 @@ const ProposalManagement = () => {
                   <th className="text-left p-3">Status</th>
                   <th className="text-left p-3">Value</th>
                   <th className="text-left p-3">Created</th>
+                  <th className="text-left p-3">Follow-ups</th>
                   <th className="text-left p-3">Actions</th>
                 </tr>
               </thead>
@@ -64,6 +64,13 @@ const ProposalManagement = () => {
                     </td>
                     <td className="p-3">${proposal.value.toLocaleString()}</td>
                     <td className="p-3">{proposal.created_at}</td>
+                    <td className="p-3">
+                      {proposal.followUpHistory && proposal.followUpHistory.length > 0 && (
+                        <Badge variant="outline">
+                          {proposal.followUpHistory.length} follow-up{proposal.followUpHistory.length !== 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                    </td>
                     <td className="p-3 space-x-2">
                       <Button 
                         variant="outline" 
@@ -98,6 +105,7 @@ const ProposalManagement = () => {
           }
           setShowDialog(false);
         }}
+        onAddFollowUp={addFollowUp}
       />
     </div>
   );

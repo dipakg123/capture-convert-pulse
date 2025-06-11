@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +14,7 @@ const LeadsManagement = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   
-  const { leads, addLead, updateLead, deleteLead, getNegotiationLeads, addMemo } = useLeads();
+  const { leads, addLead, updateLead, deleteLead, getNegotiationLeads, addMemo, addFollowUp } = useLeads();
 
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = lead.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,6 +142,7 @@ const LeadsManagement = () => {
                   <th className="text-left p-3">Source</th>
                   <th className="text-left p-3">Value</th>
                   <th className="text-left p-3">Memos</th>
+                  <th className="text-left p-3">Follow-ups</th>
                   <th className="text-left p-3">Actions</th>
                 </tr>
               </thead>
@@ -171,6 +171,13 @@ const LeadsManagement = () => {
                       {lead.memos && lead.memos.length > 0 && (
                         <Badge variant="outline">
                           {lead.memos.length} memo{lead.memos.length !== 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      {lead.followUpHistory && lead.followUpHistory.length > 0 && (
+                        <Badge variant="outline">
+                          {lead.followUpHistory.length} follow-up{lead.followUpHistory.length !== 1 ? 's' : ''}
                         </Badge>
                       )}
                     </td>
@@ -204,6 +211,7 @@ const LeadsManagement = () => {
           setShowDialog(false);
         }}
         onAddMemo={addMemo}
+        onAddFollowUp={addFollowUp}
       />
     </div>
   );

@@ -1,6 +1,14 @@
 
 import { useState, useEffect } from 'react';
 
+interface FollowUpHistory {
+  id: string;
+  date: string;
+  action: string;
+  notes: string;
+  created_by: string;
+}
+
 interface Memo {
   id: string;
   category: 'spare' | 'project' | 'service_provided' | 'key_account';
@@ -26,6 +34,9 @@ interface Lead {
   attachments?: File[];
   memos?: Memo[];
   negotiation?: boolean;
+  productId?: string;
+  sparePartIds?: string[];
+  followUpHistory?: FollowUpHistory[];
 }
 
 // Mock data for demonstration
@@ -45,6 +56,16 @@ const mockLeads: Lead[] = [
     updated_at: '2024-01-15T10:30:00Z',
     memos: [],
     negotiation: false,
+    followUpHistory: [
+      {
+        id: '1',
+        date: '2024-01-16T09:00:00Z',
+        action: 'Initial Contact',
+        notes: 'First call made to discuss requirements',
+        created_by: 'Jane Engineer'
+      }
+    ],
+    sparePartIds: [],
   },
   {
     id: '2',
@@ -57,10 +78,28 @@ const mockLeads: Lead[] = [
     application: 'Robotic AGV / AMR',
     estimated_value: 75000,
     notes: 'Follow up next week for proposal discussion',
+    assigned_to: '2',
     created_at: '2024-01-14T14:20:00Z',
     updated_at: '2024-01-16T09:15:00Z',
     memos: [],
     negotiation: true,
+    followUpHistory: [
+      {
+        id: '2',
+        date: '2024-01-15T14:00:00Z',
+        action: 'Follow-up Call',
+        notes: 'Discussed technical requirements',
+        created_by: 'Jane Engineer'
+      },
+      {
+        id: '3',
+        date: '2024-01-16T10:00:00Z',
+        action: 'Email Sent',
+        notes: 'Sent product catalog and pricing',
+        created_by: 'Jane Engineer'
+      }
+    ],
+    sparePartIds: ['1'],
   },
   {
     id: '3',
@@ -73,10 +112,21 @@ const mockLeads: Lead[] = [
     application: 'Vision System',
     estimated_value: 120000,
     notes: 'Proposal sent on Monday, awaiting response',
+    assigned_to: '3',
     created_at: '2024-01-10T16:45:00Z',
     updated_at: '2024-01-17T11:30:00Z',
     memos: [],
     negotiation: false,
+    followUpHistory: [
+      {
+        id: '4',
+        date: '2024-01-17T11:30:00Z',
+        action: 'Proposal Sent',
+        notes: 'Comprehensive proposal with technical specifications',
+        created_by: 'Mike Manager'
+      }
+    ],
+    sparePartIds: [],
   },
 ];
 
@@ -93,6 +143,7 @@ export const useLeads = () => {
       id: Math.random().toString(36).substr(2, 9),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      followUpHistory: [],
     };
     setLeads(prev => [...prev, newLead]);
   };
@@ -117,6 +168,10 @@ export const useLeads = () => {
     return leads.filter(lead => lead.negotiation === true);
   };
 
+  const getLeadsByUser = (userId: string) => {
+    return leads.filter(lead => lead.assigned_to === userId);
+  };
+
   const addMemo = (leadId: string, memo: Omit<Memo, 'id' | 'created_at'>) => {
     const newMemo: Memo = {
       ...memo,
@@ -131,6 +186,31 @@ export const useLeads = () => {
     ));
   };
 
+  const addFollowUp = (leadId: string, followUp: Omit<FollowUpHistory, 'id'>) => {
+    const newFollowUp: FollowUpHistory = {
+      ...followUp,
+      id: Math.random().toString(36).substr(2, 9),
+    };
+    
+    setLeads(prev => prev.map(lead => 
+      lead.id === leadId 
+        ? { 
+            ...lead, 
+            followUpHistory: [...(lead.followUpHistory || []), newFollowUp],
+            updated_at: new Date().toISOString() 
+          }
+        : lead
+    ));
+  };
+
+  const assignLead = (leadId: string, userId: string) => {
+    setLeads(prev => prev.map(lead => 
+      lead.id === leadId 
+        ? { ...lead, assigned_to: userId, updated_at: new Date().toISOString() }
+        : lead
+    ));
+  };
+
   return {
     leads,
     addLead,
@@ -138,6 +218,9 @@ export const useLeads = () => {
     deleteLead,
     getLeadsByStatus,
     getNegotiationLeads,
+    getLeadsByUser,
     addMemo,
+    addFollowUp,
+    assignLead,
   };
 };
